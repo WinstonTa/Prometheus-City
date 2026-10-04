@@ -1,7 +1,6 @@
+import ClientApp from "@/components/ClientApp";
+
+// Server component shell. Everything WebGL lives behind the client-only boundary in ClientApp.
 export default function Home() {
-  return (
-    <main>
-      <div>Hello world!</div>
-    </main>
-  );
+  return <ClientApp />;
 }

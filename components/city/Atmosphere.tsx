@@ -105,7 +105,7 @@ const LAYERS: CloudLayer[] = [
 
 /** Three drifting cloud layers forming the sea beneath the city. */
 export function CloudSea() {
-  const texture = useMemo(createCloudTexture, []);
+  const texture = useMemo(() => createCloudTexture(), []);
   const group = useRef<THREE.Group>(null);
 
   const clouds = useMemo(
@@ -132,7 +132,7 @@ export function CloudSea() {
 
   return (
     <group ref={group}>
-      <Clouds texture={texture} limit={limit} material={THREE.MeshLambertMaterial} frustumCulled={false}>
+      <Clouds texture={texture} limit={limit} material={THREE.MeshBasicMaterial} frustumCulled={false}>
         {clouds.map(({ key, seed, position, layer }) => (
           <Cloud
             key={key}

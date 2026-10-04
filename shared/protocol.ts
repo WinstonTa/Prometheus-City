@@ -33,8 +33,9 @@ export type ChatKind = "user" | "system" | "admin";
 export interface ChatMessage {
   id: string;
   kind: ChatKind;
-  /** Sender username (user messages only). */
+  /** Sender username and connection id (user and admin messages). */
   from?: string;
+  fromId?: string;
   text: string;
   ts: number;
 }

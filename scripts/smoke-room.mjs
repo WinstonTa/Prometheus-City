@@ -64,9 +64,11 @@ check("sender does not receive its own state", first.of("state").length === 0);
 
 // Forged admin commands are ignored without auth.
 first.send({ type: "admin-announce", text: "forged" });
+first.send({ type: "admin-say", text: "[Overseer]: forged" });
 first.send({ type: "admin-teleport", target: "all" });
 await sleep(300);
 check("unauthenticated announce ignored", !second.of("chat").some((m) => m.message.kind === "admin"));
+check("unauthenticated admin-say ignored", !second.of("chat").some((m) => m.message.kind === "admin-chat"));
 check("unauthenticated teleport ignored", second.of("teleport").length === 0);
 
 // Real admin flow.
@@ -81,6 +83,20 @@ first.send({ type: "admin-teleport", target: "all" });
 await sleep(300);
 check("admin announcement broadcast", second.of("chat").some((m) => m.message.kind === "admin" && m.message.text === "Attention, travelers."));
 check("teleport-all delivered", clients.every((c) => c.of("teleport").length === 1));
+
+// Admin chat-style messages: no banner kind, optional speaker label.
+const bannersBefore = second.of("chat").filter((m) => m.message.kind === "admin").length;
+first.send({ type: "admin-say", text: "[admin]: hello world" });
+first.send({ type: "admin-say", text: "no prefix here" });
+await sleep(300);
+const adminChats = second.of("chat").filter((m) => m.message.kind === "admin-chat").map((m) => m.message);
+check(
+  "admin-say with [label]: uses the label as speaker",
+  adminChats.some((m) => m.from === "admin" && m.text === "hello world"),
+  JSON.stringify(adminChats[0]),
+);
+check("admin-say without prefix is sent as the admin's own name", adminChats.some((m) => m.from === "bot-1" && m.text === "no prefix here"));
+check("admin-say is not a broadcast", second.of("chat").filter((m) => m.message.kind === "admin").length === bannersBefore);
 
 // Chat + leave.
 second.send({ type: "chat", text: "  hello\n world  " });

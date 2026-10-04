@@ -37,6 +37,16 @@ function ChatLine({ message }: { message: ChatMessage }) {
     );
   }
 
+  if (message.kind === "admin-chat") {
+    return (
+      <li className="px-2 py-0.5 text-[13.5px] leading-snug break-words">
+        {time}
+        <span className="font-semibold text-admin-chat">[{message.from}]:</span>
+        <span className="text-ink/90"> {message.text}</span>
+      </li>
+    );
+  }
+
   return (
     <li className="px-2 py-0.5 text-[13.5px] leading-snug break-words">
       {time}

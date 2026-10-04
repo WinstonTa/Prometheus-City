@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { MAX_CHAT_LENGTH, MAX_USERNAME_LENGTH, parseClientMessage, sanitizeUsername } from "../shared/protocol";
+import {
+  MAX_CHAT_LENGTH,
+  MAX_SPEAKER_LABEL_LENGTH,
+  MAX_USERNAME_LENGTH,
+  parseClientMessage,
+  parseSpeakerPrefix,
+  sanitizeUsername,
+} from "../shared/protocol";
 
 const raw = (value: unknown) => JSON.stringify(value);
 
@@ -45,5 +52,29 @@ describe("sanitizeUsername", () => {
     expect(sanitizeUsername("")).toBe("Wanderer");
     expect(sanitizeUsername(null)).toBe("Wanderer");
     expect(sanitizeUsername("a".repeat(50)).length).toBe(MAX_USERNAME_LENGTH);
+  });
+});
+
+describe("parseSpeakerPrefix", () => {
+  it("splits a bracketed speaker label off the message", () => {
+    expect(parseSpeakerPrefix("[admin]: hello world")).toEqual({ label: "admin", body: "hello world" });
+    expect(parseSpeakerPrefix("[Overseer] the gates open at dusk")).toEqual({ label: "Overseer", body: "the gates open at dusk" });
+    expect(parseSpeakerPrefix("[ Mission Control ]:   T-minus 10")).toEqual({ label: "Mission Control", body: "T-minus 10" });
+  });
+
+  it("leaves messages without a valid prefix untouched", () => {
+    expect(parseSpeakerPrefix("hello [admin]: world")).toEqual({ label: null, body: "hello [admin]: world" });
+    expect(parseSpeakerPrefix("[]: hi")).toEqual({ label: null, body: "[]: hi" });
+    expect(parseSpeakerPrefix("[   ]: hi")).toEqual({ label: null, body: "[   ]: hi" });
+  });
+
+  it("caps the label length and allows an empty body", () => {
+    expect(parseSpeakerPrefix(`[${"x".repeat(60)}]: hi`).label).toHaveLength(MAX_SPEAKER_LABEL_LENGTH);
+    expect(parseSpeakerPrefix("[admin]:")).toEqual({ label: "admin", body: "" });
+  });
+
+  it("accepts admin-say through the validator", () => {
+    expect(parseClientMessage(raw({ type: "admin-say", text: " [admin]: hi " }))).toEqual({ type: "admin-say", text: "[admin]: hi" });
+    expect(parseClientMessage(raw({ type: "admin-say", text: "  " }))).toBeNull();
   });
 });

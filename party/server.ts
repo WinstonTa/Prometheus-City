@@ -5,6 +5,7 @@ import {
   MAX_PLAYERS,
   SPAWN_POINT,
   parseClientMessage,
+  parseSpeakerPrefix,
   sanitizeUsername,
   type ChatKind,
   type ChatMessage,
@@ -122,6 +123,15 @@ export class PrometheusRoom extends Server<Env> {
         this.postChat("admin", msg.text, session);
         return;
 
+      case "admin-say": {
+        // Admin-only because the speaker label can name anyone.
+        if (!session.isAdmin) return;
+        const { label, body } = parseSpeakerPrefix(msg.text);
+        if (!body) return;
+        this.postChat("admin-chat", body, session, label ?? session.username);
+        return;
+      }
+
       case "admin-teleport": {
         if (!session.isAdmin) return;
         const teleport: ServerMessage = { type: "teleport", ...SPAWN_POINT };
@@ -152,13 +162,13 @@ export class PrometheusRoom extends Server<Env> {
     this.postChat("system", `${session.username} has departed the simulation.`);
   }
 
-  private postChat(kind: ChatKind, text: string, sender?: Session) {
+  private postChat(kind: ChatKind, text: string, sender?: Session, label?: string) {
     const message: ChatMessage = {
       id: crypto.randomUUID(),
       kind,
       text,
       ts: Date.now(),
-      ...(sender ? { from: sender.username, fromId: sender.id } : {}),
+      ...(sender ? { from: label ?? sender.username, fromId: sender.id } : {}),
     };
     this.history.push(message);
     if (this.history.length > CHAT_HISTORY_LIMIT) this.history.splice(0, this.history.length - CHAT_HISTORY_LIMIT);

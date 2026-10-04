@@ -4,9 +4,9 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type R
 import type { MultiplayerApi } from "@/hooks/useMultiplayer";
 import { colorFromId, localPlayer, remoteTargets } from "@/lib/remoteState";
 import { useGameStore } from "@/lib/store";
-import { MAX_CHAT_LENGTH, SPAWN_POINT } from "@/shared/protocol";
+import { MAX_CHAT_LENGTH, SPAWN_POINT, parseSpeakerPrefix } from "@/shared/protocol";
 
-type AdminApi = Pick<MultiplayerApi, "adminLogin" | "adminLogout" | "announce" | "teleport">;
+type AdminApi = Pick<MultiplayerApi, "adminLogin" | "adminLogout" | "announce" | "adminSay" | "teleport">;
 
 interface RosterRow {
   id: string;
@@ -82,38 +82,99 @@ function LoginForm({ api }: { api: AdminApi }) {
   );
 }
 
+type MessageMode = "broadcast" | "chat";
+
+const MESSAGE_MODES: Array<{ id: MessageMode; label: string; active: string }> = [
+  { id: "broadcast", label: "Global broadcast", active: "border-amber/60 bg-amber/15 text-amber" },
+  { id: "chat", label: "Chat message", active: "border-admin-chat/60 bg-admin-chat/15 text-admin-chat" },
+];
+
+/** Broadcast (amber banner + chat) or a plain chat line with an optional "[name]:" speaker label. */
+function MessageComposer({ api }: { api: AdminApi }) {
+  const [mode, setMode] = useState<MessageMode>("broadcast");
+  const [draft, setDraft] = useState("");
+  const selfName = useGameStore((s) => s.selfName);
+  const text = draft.trim();
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!text) return;
+    if (mode === "broadcast") api.announce(text);
+    else api.adminSay(text);
+    setDraft("");
+  };
+
+  // Mirrors the server's parsing so the admin sees exactly how the line will render.
+  const preview = mode === "chat" && text ? parseSpeakerPrefix(text) : null;
+
+  return (
+    <Section title="SEND MESSAGE">
+      <div className="flex gap-1.5" role="radiogroup" aria-label="Message type">
+        {MESSAGE_MODES.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            role="radio"
+            aria-checked={mode === m.id}
+            onClick={() => setMode(m.id)}
+            className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold transition ${
+              mode === m.id ? m.active : "border-edge text-muted hover:text-ink"
+            }`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <form onSubmit={submit} className="flex gap-2">
+        <input
+          className={inputClass}
+          placeholder={mode === "broadcast" ? "Broadcast to every player…" : "[admin]: hello world"}
+          value={draft}
+          maxLength={MAX_CHAT_LENGTH}
+          onChange={(e) => setDraft(e.target.value)}
+          autoFocus
+        />
+        <button
+          type="submit"
+          disabled={!text}
+          className={`${buttonClass} shrink-0 ${
+            mode === "broadcast"
+              ? "border-amber/60 bg-amber/15 text-amber hover:bg-amber/25"
+              : "border-admin-chat/60 bg-admin-chat/15 text-admin-chat hover:bg-admin-chat/25"
+          }`}
+        >
+          {mode === "broadcast" ? "Broadcast" : "Send"}
+        </button>
+      </form>
+      {mode === "broadcast" ? (
+        <p className="text-[11px] text-muted">Shown to everyone as an amber chat entry and a banner at the top of the screen.</p>
+      ) : (
+        <div className="space-y-1">
+          <p className="text-[11px] text-muted">
+            Appears as a normal chat line. Start with <code className="text-admin-chat">[name]:</code> to set the speaker label; otherwise it is
+            sent as you.
+          </p>
+          {preview && preview.body && (
+            <p className="rounded-md border border-edge bg-black/30 px-2 py-1 text-[13px] break-words">
+              <span className="font-semibold text-admin-chat">[{preview.label ?? selfName ?? "you"}]:</span>
+              <span className="text-ink/90"> {preview.body}</span>
+            </p>
+          )}
+        </div>
+      )}
+    </Section>
+  );
+}
+
 function AdminControls({ api }: { api: AdminApi }) {
   const rows = useRosterRows();
-  const [announcement, setAnnouncement] = useState("");
   const requestTeleport = useGameStore((s) => s.requestTeleport);
-
-  const broadcast = (e: FormEvent) => {
-    e.preventDefault();
-    const text = announcement.trim();
-    if (!text) return;
-    api.announce(text);
-    setAnnouncement("");
-  };
 
   const resetSelf = () => requestTeleport(SPAWN_POINT.x, SPAWN_POINT.y, SPAWN_POINT.z);
 
   return (
     <div className="space-y-6">
-      <Section title="GLOBAL ANNOUNCEMENT">
-        <form onSubmit={broadcast} className="flex gap-2">
-          <input
-            className={inputClass}
-            placeholder="Broadcast to every player…"
-            value={announcement}
-            maxLength={MAX_CHAT_LENGTH}
-            onChange={(e) => setAnnouncement(e.target.value)}
-            autoFocus
-          />
-          <button type="submit" disabled={!announcement.trim()} className={`${buttonClass} shrink-0 border-amber/60 bg-amber/15 text-amber hover:bg-amber/25`}>
-            Broadcast
-          </button>
-        </form>
-      </Section>
+      <MessageComposer api={api} />
 
       <Section title={`ROOM ROSTER · ${rows.length}`}>
         <div className="hud-scroll max-h-56 overflow-y-auto rounded-md border border-edge">

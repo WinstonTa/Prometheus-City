@@ -28,12 +28,18 @@ export interface PlayerSnapshot extends PlayerState {
   username: string;
 }
 
-export type ChatKind = "user" | "system" | "admin";
+/**
+ * - user: a player's chat line
+ * - system: join/leave notices
+ * - admin: global broadcast (chat entry + top banner)
+ * - admin-chat: an admin message styled as ordinary chat, with a highlighted speaker label
+ */
+export type ChatKind = "user" | "system" | "admin" | "admin-chat";
 
 export interface ChatMessage {
   id: string;
   kind: ChatKind;
-  /** Sender username and connection id (user and admin messages). */
+  /** Sender username (or custom speaker label for admin-chat) and connection id. */
   from?: string;
   fromId?: string;
   text: string;
@@ -50,6 +56,7 @@ export type ClientMessage =
   | { type: "admin-auth"; username: string; password: string }
   | { type: "admin-logout" }
   | { type: "admin-announce"; text: string }
+  | { type: "admin-say"; text: string }
   | { type: "admin-teleport"; target: TeleportTarget };
 
 // ---------------------------------------------------------------- server → client
@@ -134,9 +141,10 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
       return { type: "admin-auth", username: msg.username.slice(0, 64), password: msg.password.slice(0, 128) };
     case "admin-logout":
       return { type: "admin-logout" };
-    case "admin-announce": {
+    case "admin-announce":
+    case "admin-say": {
       const text = sanitizeText(msg.text, MAX_CHAT_LENGTH);
-      return text ? { type: "admin-announce", text } : null;
+      return text ? { type: msg.type, text } : null;
     }
     case "admin-teleport":
       if (typeof msg.target !== "string" || msg.target.length === 0 || msg.target.length > 64) return null;
@@ -144,6 +152,21 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
     default:
       return null;
   }
+}
+
+export const MAX_SPEAKER_LABEL_LENGTH = 24;
+
+/**
+ * Split an optional leading speaker label off an admin chat message:
+ * "[admin]: hello world" → { label: "admin", body: "hello world" }. The colon is optional.
+ * Returns label null when there is no (valid) bracketed prefix.
+ */
+export function parseSpeakerPrefix(text: string): { label: string | null; body: string } {
+  const match = /^\[([^[\]]+)\]\s*:?\s*([\s\S]*)$/.exec(text);
+  if (!match) return { label: null, body: text };
+  const label = match[1].trim().slice(0, MAX_SPEAKER_LABEL_LENGTH);
+  if (!label) return { label: null, body: text };
+  return { label, body: match[2].trim() };
 }
 
 /** Parse a message from the server. The server is trusted, so this only guards against bad JSON. */

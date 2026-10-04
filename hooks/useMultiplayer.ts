@@ -23,6 +23,8 @@ export interface MultiplayerApi {
   adminLogin: (username: string, password: string) => void;
   adminLogout: () => void;
   announce: (text: string) => void;
+  /** Admin message styled as normal chat; optional "[name]: " prefix sets the speaker label. */
+  adminSay: (text: string) => void;
   teleport: (target: TeleportTarget) => void;
 }
 
@@ -155,6 +157,7 @@ export function useMultiplayer(username: string | null): MultiplayerApi {
       },
       adminLogout: () => send({ type: "admin-logout" }),
       announce: (text) => send({ type: "admin-announce", text }),
+      adminSay: (text) => send({ type: "admin-say", text }),
       teleport: (target) => send({ type: "admin-teleport", target }),
     };
   }, []);

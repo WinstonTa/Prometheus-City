@@ -40,7 +40,9 @@ Mock credentials: `admin` / `password`.
 The **room server** checks these credentials (`ADMIN_USERNAME` / `ADMIN_PASSWORD` in `wrangler.jsonc`), so a client cannot forge announcements or teleports.
 
 Once logged in you get:
-- A global announcement. It appears as a chat entry and as a top banner for every player.
+- A message composer with two modes:
+  - **Global broadcast**: an amber chat entry plus a top banner for every player.
+  - **Chat message**: a normal chat line with a green speaker label. Start it with `[name]:` to choose the label (`[admin]: hello world` shows as **[admin]:** hello world). Without a prefix it is sent under your own name. Only authenticated admins can send these, because the label can name anyone.
 - A live room roster (peer ids, usernames, positions).
 - Per-player, "me", and "all" resets to spawn.
 

@@ -1,0 +1,30 @@
+{
+  // Prometheus City realtime room server (PartyServer on Cloudflare Durable Objects).
+  // Local:  npm run dev:party   (http://localhost:8787)
+  // Deploy: npm run party:deploy, then set NEXT_PUBLIC_PARTY_HOST on Vercel.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "prometheus-city-party",
+  "main": "party/server.ts",
+  "compatibility_date": "2026-09-01",
+  "durable_objects": {
+    "bindings": [
+      {
+        // routePartykitRequest exposes this as the "prometheus-room" party.
+        "name": "PrometheusRoom",
+        "class_name": "PrometheusRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["PrometheusRoom"]
+    }
+  ],
+  // Mock admin credentials. Override in production with
+  // `npx wrangler secret put ADMIN_PASSWORD` (and ADMIN_USERNAME).
+  "vars": {
+    "ADMIN_USERNAME": "admin",
+    "ADMIN_PASSWORD": "password"
+  }
+}

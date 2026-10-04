@@ -3,7 +3,7 @@
 import { Instance, Instances } from "@react-three/drei";
 import { useMemo } from "react";
 import { COLORS } from "@/lib/cityLayout";
-import { hullMaterial } from "./materials";
+import { distantHullMaterial } from "./materials";
 
 /** Deterministic PRNG so every client sees the same skyline. */
 function mulberry32(seed: number) {
@@ -58,15 +58,15 @@ export function DistantSkyline() {
     <group>
       {islands.map((island, i) => (
         <group key={i} position={island.position}>
-          <mesh position-y={-0.75} material={hullMaterial}>
+          <mesh position-y={-0.75} material={distantHullMaterial}>
             <cylinderGeometry args={[island.radius, island.radius * 0.95, 1.5, 32]} />
           </mesh>
-          <mesh position-y={-1.5 - island.depth / 2} rotation-x={Math.PI} material={hullMaterial}>
+          <mesh position-y={-1.5 - island.depth / 2} rotation-x={Math.PI} material={distantHullMaterial}>
             <coneGeometry args={[island.radius * 0.95, island.depth, 24]} />
           </mesh>
         </group>
       ))}
-      <Instances limit={towers.length} material={hullMaterial}>
+      <Instances limit={towers.length} material={distantHullMaterial}>
         <boxGeometry />
         {towers.map((t, i) => (
           <Instance key={i} position={t.position} scale={t.scale} />

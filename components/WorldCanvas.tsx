@@ -12,7 +12,7 @@ import type { PlayerState } from "@/shared/protocol";
 function FlyoverCamera() {
   useFrame(({ camera, clock }) => {
     const t = clock.elapsedTime * 0.045;
-    camera.position.set(Math.sin(t) * 78, 24 + Math.sin(t * 2.3) * 5, Math.cos(t) * 78);
+    camera.position.set(Math.sin(t) * 125, 30 + Math.sin(t * 2.3) * 6, Math.cos(t) * 125);
     camera.lookAt(0, 8, 0);
   });
   return null;
@@ -34,7 +34,7 @@ export default function WorldCanvas({ playing, onLocalState }: WorldCanvasProps)
       className="!fixed inset-0"
       dpr={[1, 1.75]}
       gl={{ antialias: true, powerPreference: "high-performance" }}
-      camera={{ fov: 62, near: 0.1, far: 4000, position: [0, 24, 78] }}
+      camera={{ fov: 62, near: 0.1, far: 5000, position: [0, 30, 125] }}
     >
       <Atmosphere />
       <City />

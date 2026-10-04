@@ -16,6 +16,13 @@ export const hullLightMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.45,
 });
 
+/** Horizon islands: lighter so the fog reads them as hazy silhouettes, not black holes. */
+export const distantHullMaterial = new THREE.MeshStandardMaterial({
+  color: "#5d5f7d",
+  metalness: 0.2,
+  roughness: 0.8,
+});
+
 export const deckMaterial = new THREE.MeshStandardMaterial({
   color: COLORS.deck,
   metalness: 0.35,

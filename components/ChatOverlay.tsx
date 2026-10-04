@@ -76,7 +76,8 @@ export default function ChatOverlay({ onSend }: { onSend: (text: string) => void
       e.preventDefault();
       if (document.pointerLockElement) document.exitPointerLock();
       setCollapsed(false);
-      requestAnimationFrame(() => inputRef.current?.focus());
+      // The input is rendered even while collapsed, so it can take focus immediately.
+      inputRef.current?.focus();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -122,7 +123,10 @@ export default function ChatOverlay({ onSend }: { onSend: (text: string) => void
         <h2 className="font-display text-[10px] font-bold tracking-[0.3em] text-cyan/90">COMMS</h2>
         <button
           type="button"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={(e) => {
+            setCollapsed(!collapsed);
+            e.currentTarget.blur(); // give the keyboard back to the game
+          }}
           className="flex items-center gap-2 rounded px-1.5 py-0.5 text-[11px] text-muted transition hover:bg-white/5 hover:text-ink"
           aria-expanded={!collapsed}
         >

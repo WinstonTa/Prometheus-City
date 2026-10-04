@@ -207,7 +207,10 @@ export default function AdminModal({ api }: { api: AdminApi }) {
     <>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={(e) => {
+          setOpen(!open);
+          e.currentTarget.blur();
+        }}
         title="Admin panel (Ctrl+Shift+A)"
         aria-label="Open admin panel"
         className="pointer-events-auto fixed right-4 bottom-4 z-20 grid size-8 place-items-center rounded-full border border-edge bg-hud text-sm text-muted/50 transition hover:text-cyan hover:border-cyan/40"

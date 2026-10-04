@@ -9,9 +9,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p party",
+    "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p party",
     "test": "vitest run",
-    "party:deploy": "wrangler deploy"
+    "party:deploy": "wrangler deploy",
+    "test:room": "node scripts/smoke-room.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

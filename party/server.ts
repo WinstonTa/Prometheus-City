@@ -99,7 +99,7 @@ export class PrometheusRoom extends Server<Env> {
         session.chatTimestamps = session.chatTimestamps.filter((t) => now - t < CHAT_WINDOW_MS);
         if (session.chatTimestamps.length >= CHAT_MAX_PER_WINDOW) return;
         session.chatTimestamps.push(now);
-        this.postChat("user", msg.text, session.username);
+        this.postChat("user", msg.text, session);
         return;
       }
 
@@ -119,7 +119,7 @@ export class PrometheusRoom extends Server<Env> {
 
       case "admin-announce":
         if (!session.isAdmin) return;
-        this.postChat("admin", msg.text, session.username);
+        this.postChat("admin", msg.text, session);
         return;
 
       case "admin-teleport": {
@@ -152,8 +152,14 @@ export class PrometheusRoom extends Server<Env> {
     this.postChat("system", `${session.username} has departed the simulation.`);
   }
 
-  private postChat(kind: ChatKind, text: string, from?: string) {
-    const message: ChatMessage = { id: crypto.randomUUID(), kind, text, ts: Date.now(), ...(from ? { from } : {}) };
+  private postChat(kind: ChatKind, text: string, sender?: Session) {
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      kind,
+      text,
+      ts: Date.now(),
+      ...(sender ? { from: sender.username, fromId: sender.id } : {}),
+    };
     this.history.push(message);
     if (this.history.length > CHAT_HISTORY_LIMIT) this.history.splice(0, this.history.length - CHAT_HISTORY_LIMIT);
     this.broadcastMessage({ type: "chat", message });
